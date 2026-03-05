@@ -1,0 +1,7 @@
+{
+  "Fruit_Fasciation_Disorder": 0,
+  "Fruit_Rot_Disease": 1,
+  "Mealybug_Wilt_Disease": 2,
+  "No_Disease": 3,
+  "Root_Rot_Disease": 4
+}

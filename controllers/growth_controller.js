@@ -2,6 +2,7 @@ const axios = require("axios");
 const FormData = require("form-data");
 const http = require("http");
 const https = require("https");
+const mongoose = require("mongoose");
 
 const GrowthReport = require("../models/growth_report_model");
 
@@ -15,6 +16,8 @@ const axiosClient = axios.create({
   maxContentLength: Infinity,
   maxBodyLength: Infinity,
 });
+
+const isDbReady = () => mongoose?.connection?.readyState === 1;
 
 function buildRecommendation(condition, confidence) {
   const recommendations = {
@@ -137,17 +140,44 @@ exports.predictGrowth = async (req, res) => {
       recommendation,
     });
 
-    const report = await GrowthReport.create({
-      farmerId,
-      region,
-      location: { lat, lon },
-      language,
-      voiceText,
-      image: {
-        originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        sizeBytes: req.file.size,
-      },
+    // If Mongo isn't configured/connected, don't block the request.
+    // The app can still show the prediction without persisting history.
+    let reportId = null;
+    if (isDbReady()) {
+      try {
+        const report = await GrowthReport.create({
+          farmerId,
+          region,
+          location: { lat, lon },
+          language,
+          voiceText,
+          image: {
+            originalName: req.file.originalname,
+            mimeType: req.file.mimetype,
+            sizeBytes: req.file.size,
+          },
+          prediction: {
+            month,
+            condition,
+            predictedClass: data.predicted_class,
+            confidence: data.confidence,
+            probabilities: data.probabilities,
+            modelVersion: data.model_version,
+          },
+          recommendation,
+        });
+        reportId = report?._id || null;
+      } catch (e) {
+        // Don't fail prediction if persistence fails
+        reportId = null;
+      }
+    }
+
+    const explain = String(req.query.explain || "").toLowerCase() === "true";
+
+    const payload = {
+      success: true,
+      reportId,
       prediction: {
         month,
         condition,
@@ -157,16 +187,7 @@ exports.predictGrowth = async (req, res) => {
         modelVersion: data.model_version,
       },
       recommendation,
-    });
-
-    const explain = String(req.query.explain || "").toLowerCase() === "true";
-
-    const payload = {
-      success: true,
-      reportId: report._id,
-      prediction: report.prediction,
-      recommendation: report.recommendation,
-      voiceText: report.voiceText,
+      voiceText,
     };
 
     if (explain) {
@@ -184,6 +205,11 @@ exports.predictGrowth = async (req, res) => {
 
 exports.getGrowthHistory = async (req, res) => {
   try {
+    if (!isDbReady()) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Database unavailable (set MONGO_URI)" });
+    }
     const { farmerId } = req.params;
     const limit = Math.min(Number(req.query.limit || 20), 100);
 
@@ -209,6 +235,11 @@ exports.getGrowthHistory = async (req, res) => {
 
 exports.getRegionalAlerts = async (req, res) => {
   try {
+    if (!isDbReady()) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Database unavailable (set MONGO_URI)" });
+    }
     const region = req.query.region;
     const days = Math.min(Number(req.query.days || 7), 60);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -253,6 +284,11 @@ exports.getRegionalAlerts = async (req, res) => {
 
 exports.submitGrowthFeedback = async (req, res) => {
   try {
+    if (!isDbReady()) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Database unavailable (set MONGO_URI)" });
+    }
     const { reportId, isCorrect, correctCondition, notes } = req.body || {};
 
     if (!reportId) {
@@ -281,6 +317,11 @@ exports.submitGrowthFeedback = async (req, res) => {
 
 exports.getVoiceAlert = async (req, res) => {
   try {
+    if (!isDbReady()) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Database unavailable (set MONGO_URI)" });
+    }
     const { reportId } = req.params;
     const { language } = req.body || {};
 

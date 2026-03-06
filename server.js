@@ -38,6 +38,7 @@ connectDB().catch((err) => {
 app.use("/api/auth", require("./routes/user_routes"));
 app.use("/api/predict", require("./routes/predict_routes")); // pest
 app.use("/api/disease", require("./routes/disease_predict_routes")); // disease
+app.use("/api/growth", require("./routes/growth_routes")); // growth
 
 // ---------- Health & Debug ----------
 app.get("/", (req, res) => res.send("✅ Backend running"));
@@ -49,6 +50,7 @@ app.get("/api/routes", (req, res) => {
     health: "/api/health",
     pestPredict: "POST /api/predict  (FormData key: image)",
     diseasePredict: "POST /api/disease/predict  (FormData key: image)",
+    growthPredict: "POST /api/growth/predict  (FormData key: file)",
   });
 });
 

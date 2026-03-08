@@ -5,7 +5,7 @@
   "scripts": {
     "test": "npm run dev",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "npx nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +20,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "firebase-admin": "^13.5.0",
+    "form-data": "^4.0.4",
     "gridfs-stream": "^1.1.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.13.0",
@@ -28,6 +29,9 @@
     "nodemailer": "^6.10.0",
     "server": "file:",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   },
   "description": ""
 }

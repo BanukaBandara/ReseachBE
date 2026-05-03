@@ -30,7 +30,8 @@ if (!fs.existsSync(uploadsDir)) {
 app.use("/uploads", express.static(uploadsDir));
 
 // ---------- Connect DB (non-blocking) ----------
-connectDB().catch((err) => {
+// Machan methana family: 4 damme IPv6 issues bypass karanna
+connectDB({ family: 4 }).catch((err) => {
   console.log("⚠️ DB connect promise rejected:", err?.message || err);
 });
 
